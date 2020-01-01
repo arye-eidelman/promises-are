@@ -1,7 +1,7 @@
 {
   "name": "promises-are",
   "version": "0.1.1",
-  "description": "A tool for creating promises that'll fulfill or reject based on the state of an array of promises. Similar to Promise.all and Promise.any, While allowing more finer control over when/if a it'll fullfil or reject via a callback function. The callback will be called every time any of the promises state changes. Some usage examples: `Promises are mostly done with a 90 percent success rate`, `promises are very slow`, `promises have a high error rate`, `promises when progress updates`.",
+  "description": "A tool for creating promises that'll fulfill or reject based on the state of an array of promises. Similar to Promise.all and Promise.any, While allowing more finer control over when/if it'll fullfil or reject via a callback function. The callback will be called every time any of the promises state changes. Some usage examples: `Promises are mostly done with a 90 percent success rate`, `promises are very slow`, `promises have a high error rate`, `promises when progress updates`.",
   "main": "lib/index.js",
   "files": [
     "lib/**/*"
@@ -15,7 +15,9 @@
   "private": false,
   "devDependencies": {
     "@types/jest": "^24.0.25",
+    "concurrently": "^5.0.2",
     "jest": "^24.9.0",
+    "npm-watch": "^0.6.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.2.0",
     "tslint": "^5.20.1",
@@ -24,13 +26,32 @@
   },
   "scripts": {
     "test": "jest --config jestconfig.json",
-    "build": "tsc",
+    "watch-test": "npm-watch test",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
+    "build": "tsc",
+    "dev-build": "concurrently \"yarn run format && yarn run lint\" \"yarn run build\"",
+    "dev": "npm-watch dev-build",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
-    "preversion": "npm run lint",
-    "version": "npm run format && git add -A src",
+    "prepublishOnly": "npm run dev-build && npm run test",
+    "preversion": "npm run dev-build && npm run test",
+    "version": "git add -A src",
     "postversion": "git push && git push --tags"
+  },
+  "watch": {
+    "test": {
+      "patterns": [
+        "lib"
+      ],
+      "extensions": "js,ts",
+      "quiet": false
+    },
+    "dev-build": {
+      "patterns": [
+        "src"
+      ],
+      "extensions": "js,ts",
+      "quiet": false
+    }
   }
 }
