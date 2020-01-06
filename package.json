@@ -4,7 +4,8 @@
   "description": "A tool for creating promises that'll fulfill or reject based on the state of an array of promises. Similar to Promise.all and Promise.any, While allowing more finer control over when/if it'll fullfil or reject via a callback function. The callback will be called every time any of the promises state changes. Some usage examples: `Promises are mostly done with a 90 percent success rate`, `promises are very slow`, `promises have a high error rate`, `promises when progress updates`.",
   "main": "lib/index.js",
   "files": [
-    "lib/**/*"
+    "lib/**/!(*.test).*",
+    "lib/!(*.test).*"
   ],
   "repository": {
     "url": "https://github.com/arye-dov-eidelman/promises-are",
@@ -42,7 +43,7 @@
   "watch": {
     "test": {
       "patterns": [
-        "lib"
+        "src"
       ],
       "extensions": "js,ts",
       "quiet": false
