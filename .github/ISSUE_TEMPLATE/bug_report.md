@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Execute the following JavaScript (or codepen link):
+1. Execute the following JavaScript (or codepen/jsfiddle link):
 ```javascript
 
 ```
@@ -20,7 +20,7 @@ Steps to reproduce the behavior:
 2. See error or logs
 
 **Actual behavior**
-A clear and concise description of what you is happening. (e.g: what error are you receiving.)
+A clear and concise description of what is happening. (e.g: what error are you receiving.)
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
