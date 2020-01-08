@@ -1,3 +1,5 @@
+import OpenPromise from './OpenPromise';
+
 type promiseState = 'pending' | 'fulfilled' | 'rejected';
 
 /**
@@ -6,35 +8,32 @@ type promiseState = 'pending' | 'fulfilled' | 'rejected';
  * @returns a promise when the promises are in the desired state.
  */
 
-export default function promisesAre(
-  promises: Array<Promise<any>>,
-  are: (promises: Array<Promise<any>>, states: promiseState[]) => boolean,
+export default function promisesAre<T>(
+  promises: Array<Promise<T>>,
+  are: (promises: Array<Promise<T>>, states: promiseState[], results: Array<T | undefined>) => boolean,
+  options: { shortCircuit: boolean } = { shortCircuit: true },
 ): Promise<{
-  promises: Array<Promise<any>>;
-  results: any[];
+  promises: Array<Promise<T>>;
+  results: Array<T | undefined>;
   states: promiseState[];
 }> {
   return new Promise((resolve, reject) => {
-    const results: any[] = [];
-    const states: promiseState[] = new Array(promises.length).fill('pending');
+    let states: promiseState[];
+    let results: Array<T | undefined>;
+    let openPromises: Array<OpenPromise<T>>;
     let resolved: boolean = false;
 
-    // Every time one of the promises resolve the are callback is called.
-    // if it returns true then this promise will fulfill.
-    const onStateChange = (result: any, index: number, state: promiseState) => {
-      if (!resolved) {
-        results[index] = result;
-        states[index] = 'fulfilled';
-        if (are(promises, states)) {
-          resolve({ promises, results, states });
+    const updateState = () => {
+      if (!(options.shortCircuit && resolved)) {
+        results = openPromises.map((openPromise: OpenPromise<T>) => openPromise.result);
+        states = openPromises.map((openPromise: OpenPromise<T>) => openPromise.state);
+        if (are(promises, states, results)) {
+          resolve({ promises, states, results });
           resolved = true;
         }
       }
     };
 
-    promises.forEach((promise, index) => {
-      promise.then(result => onStateChange(result, index, 'fulfilled'));
-      promise.catch(result => onStateChange(result, index, 'rejected'));
-    });
+    openPromises = promises.map((promise: Promise<T>) => new OpenPromise(promise, updateState));
   });
 }

@@ -1,13 +1,13 @@
-import promisesAre from './index';
+import promisesAre from './promisesAre';
 
 describe('promisesAre', () => {
   test('one resolved promise returns correctly', async () => {
-    const promises = [Promise.resolve('done')];
-    const done = await promisesAre([Promise.resolve()], () => true);
+    const promises = [Promise.resolve().then(() => 'done')];
+    const done = await promisesAre(promises, () => true);
     expect(done).toMatchObject({ promises, states: ['fulfilled'], results: ['done'] });
   });
 
-  test('one pending promise  returns correctly', async () => {
+  test('one pending promise returns correctly', async () => {
     const promises = [
       new Promise(resolve => {
         setTimeout(() => {
@@ -16,7 +16,7 @@ describe('promisesAre', () => {
       }),
     ];
     const done = await promisesAre(promises, () => true);
-    expect(done).toMatchObject({ promises, states: ['fulfilled'], results: ['foo'] });
+    expect(done).toMatchObject({ promises, states: ['pending'], results: ['foo'] });
   });
 
   test("one pending promise doesn't return early", async () => {
