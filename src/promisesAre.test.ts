@@ -1,38 +1,29 @@
 import promisesAre from './promisesAre';
 
 describe('promisesAre', () => {
-  test('one resolved promise returns correctly', async () => {
-    const promises = [Promise.resolve().then(() => 'done')];
-    const done = await promisesAre(promises, () => true);
-    expect(done).toMatchObject({ promises, states: ['fulfilled'], results: ['done'] });
-  });
-
-  test('one pending promise returns correctly', async () => {
+  test('returns a PublicPromise array, with the initial (sync) promises, states, and values', () => {
+    expect.assertions(1);
     const promises = [
-      new Promise(resolve => {
-        setTimeout(() => {
-          resolve('foo');
-        }, 50);
-      }),
+      Promise.resolve('fulfilled result'),
+      Promise.reject('fulfilled result'),
+      Promise.resolve().then(() => 'pending result'),
     ];
-    const done = await promisesAre(promises, () => true);
-    expect(done).toMatchObject({ promises, states: ['pending'], results: ['foo'] });
-  });
-
-  test("one pending promise doesn't return early", async () => {
-    const promises = [
-      new Promise(resolve => {
-        setTimeout(() => {
-          resolve('foo');
-        }, 50);
-      }),
-    ];
-    let done = false;
-    promisesAre(promises, () => true).then(result => {
-      done = true;
+    return promisesAre(promises, () => true).then(result => {
+      expect(result).toMatchObject([
+        { promise: promises[0], state: 'fulfilled', result: 'fulfilled result' },
+        { promise: promises[1], state: 'rejected', result: 'fulfilled result' },
+        { promise: promises[2], state: 'pending', result: undefined },
+      ]);
     });
-    setTimeout(() => {
-      expect(done).toBe(false);
-    }, 10);
+  });
+
+  test('can resolve without awaiting pending promises', () => {
+    expect.assertions(1);
+
+    const promise = Promise.resolve().then(() => 'done');
+    const inAnyState = () => true;
+    return promisesAre([promise], inAnyState).then(result => {
+      expect(result).toMatchObject([{ promise, state: 'pending', result: undefined }]);
+    });
   });
 });

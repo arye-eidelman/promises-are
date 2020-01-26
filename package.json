@@ -16,7 +16,6 @@
   "private": false,
   "devDependencies": {
     "@types/jest": "^24.0.25",
-    "concurrently": "^5.0.2",
     "jest": "^24.9.0",
     "npm-watch": "^0.6.0",
     "prettier": "^1.19.1",
@@ -31,12 +30,12 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "build": "tsc",
-    "dev-build": "concurrently \"yarn run format && yarn run lint\" \"yarn run build\"",
-    "dev": "npm-watch dev-build",
-    "start": "node -i -e \"promisesAre = require('./lib/index.js')\"",
+    "dev-toolchain": "npm run format && npm run lint && npm run build && npm run test",
+    "dev": "npm-watch dev-toolchain",
+    "console": "node -i -e \"promisesAre = require('./lib/index.js').promisesAre; PublicPromise = require('./lib/index.js').PublicPromise\"",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run dev-build && npm run test",
-    "preversion": "npm run dev-build && npm run test",
+    "prepublishOnly": "npm run dev-toolchain",
+    "preversion": "npm run dev-toolchain",
     "version": "git add -A src",
     "postversion": "git push && git push --tags"
   },
@@ -46,14 +45,14 @@
         "src"
       ],
       "extensions": "js,ts",
-      "quiet": false
+      "quiet": true
     },
-    "dev-build": {
+    "dev-toolchain": {
       "patterns": [
         "src"
       ],
       "extensions": "js,ts",
-      "quiet": false
+      "quiet": true
     }
   }
 }

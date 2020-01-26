@@ -7,62 +7,76 @@ Similar to Promise.all and Promise.any,
 While allowing more finer control over when/if it'll fulfill or reject via a callback function.
 The callback will be called every time any of the promises state changes.
 
-## This is a work in progress, Nothing is ready yet
+> > ## This is not yet ready and subject to breaking api changes
 
-If this interests you I would be glad to collaborate on this project.
+## api
 
-You can subscribe to releases on github.
+### The promisesAre api is specified in [src/promisesAre.ts](./src/promisesAre.ts).
 
-## Planned api
+It takes two arguments.  The first one is an array of promises. The second one is a callback function that gets called whenever a promise resolves. It gets an array of publicPromises and should return a boolean to fulfill or reject, or don't return to keep it pending for now.
 
-The api might look like this:
+### The PublicPromise is specified in [src/PublicPromise.ts](./src/PublicPromise.ts).
 
-```typescript
-type promiseState = "pending" | "fulfilled" | "rejected"
+it's constructor takes a promise and exposes it's current state, the result (or error reason), and the original promise
 
-/**
- * @promises promises who's state you care about.
- * @are a callback that should return true when the promises are in the desired state.
- * @returns a promise when the promises are in the desired state.
- */
-function promisesAre(
-  promises: Promise<any>[],
-  are: (promises: Promise<any>[], states: promiseState[]) => Boolean
-): Promise<{
-  promises: Promise<any>[],
-  states: promiseState[],
-  results: any[]
-}> {
+Note that being that internally this is chaining on promises to get the state and result it will always be pending and undefined respectively when accessed synchronously, for example `new PublicPromise(Promise.resolve('result text')).state` equals pending, even though the promise resolved synchronously.
 
-  // Every time one of the promises resolve the are callback is called.
-  // if it returns true then this promise will fulfill.
+The same thing can happen if the promise was created in a previous event and now in the current event you create a PublicPromise. You would need to wait for the stack to clear for it to get a chance to read the state. If on the other hand you created the PublicPromise in the previous event, you could read it's result and state now in a synchronous manner.
 
-  // example return value
-  return Promise.resolve({
-    promises: promises,
-    states:  ["pending", "fulfilled", "rejected"    ],
-    results: [null,      { data: {}}, "error reason"]
-  })
-}
+This makes PublicPromise most useful when it's instantiated at the time of promise creation and not at the time when you want to read the state or result.
 
-```
+## Usage examples
 
-Some usage examples:
-
-- `Promises are mostly done`,
+- `Promises are 75% done`.
 
   ```javascript
+  function areMostlyDone(publicPromises) {
+    const allStates = publicPromises.map(pp => pp.state)
+    const doneStates = allStates.filter(state => state !== "pending")
+    const mostlyDone = doneStates.length > allStates.length * 0.75
+    if (mostlyDone) {
+      return true
+    }
+  }
   promisesAre(promises, areMostlyDone).then(/* */)
   ```
 
-- `Promises are mostly done with a 90 percent success rate`,
+- `Promises are 75% done with a 90% percent success rate`.
 
   ```javascript
-  promisesAre(promises, areMostlyDoneWithA90PercentSuccessRate).then(/* */)
+  function areMostlyDoneWithHighSuccessRate(publicPromises) {
+    const allStates = publicPromises.map(pp => pp.state)
+    const doneStates = allStates.filter(state => state !== "pending")
+    const mostlyDone = doneStates.length > allStates.length * 0.75
+
+    const fulfilledStates = allStates.filter(state => state === "fulfilled")
+    const rejectedStates = allStates.filter(state => state === "rejected")
+    const highSuccessRate = rejectedStates.length < allStates.length * 0.10
+
+    if (mostlyDone) {
+      return highSuccessRate
+    }
+  }
+  promisesAre(promises, areMostlyDoneWithHighSuccessRate).then(/* */)
   ```
 
-- `promises have a high error rate (with substantial sample size)`,
+- `promises have a 50% error rate (with 10% sample size)`.
 
   ```javascript
-  promisesAre(promises, haveaHighErrorRate).then(/* */)
+  promisesAre(promises, haveAHighErrorRate).then(/* */)
+
+  function haveAHighErrorRate(publicPromises) {
+    const allStates = publicPromises.map(pp => pp.state)
+    const doneStates = allStates.filter(state => state !== "pending")
+    const tenPercentComplete = doneStates.length > allStates.length * 0.10
+
+    const fulfilledStates = allStates.filter(state => state === "fulfilled")
+    const rejectedStates = allStates.filter(state => state === "rejected")
+    const highErrorRate = rejectedStates.length > allStates.length * 0.50
+
+    if (tenPercentComplete) {
+      return highErrorRate
+    }
+  }
+  promisesAre(promises, haveAHighErrorRate).then(/* */)
   ```

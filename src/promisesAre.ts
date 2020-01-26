@@ -1,4 +1,4 @@
-import OpenPromise from './OpenPromise';
+import PublicPromise from './PublicPromise';
 
 type promiseState = 'pending' | 'fulfilled' | 'rejected';
 
@@ -10,30 +10,23 @@ type promiseState = 'pending' | 'fulfilled' | 'rejected';
 
 export default function promisesAre<T>(
   promises: Array<Promise<T>>,
-  are: (promises: Array<Promise<T>>, states: promiseState[], results: Array<T | undefined>) => boolean,
+  are: (publicPromises: Array<PublicPromise<T>>) => boolean,
   options: { shortCircuit: boolean } = { shortCircuit: true },
-): Promise<{
-  promises: Array<Promise<T>>;
-  results: Array<T | undefined>;
-  states: promiseState[];
-}> {
+): Promise<Array<PublicPromise<T>>> {
   return new Promise((resolve, reject) => {
-    let states: promiseState[];
-    let results: Array<T | undefined>;
-    let openPromises: Array<OpenPromise<T>>;
     let resolved: boolean = false;
 
     const updateState = () => {
-      if (!(options.shortCircuit && resolved)) {
-        results = openPromises.map((openPromise: OpenPromise<T>) => openPromise.result);
-        states = openPromises.map((openPromise: OpenPromise<T>) => openPromise.state);
-        if (are(promises, states, results)) {
-          resolve({ promises, states, results });
+      if (!resolved || !options.shortCircuit) {
+        if (are(publicPromises)) {
+          resolve(publicPromises);
           resolved = true;
         }
       }
     };
 
-    openPromises = promises.map((promise: Promise<T>) => new OpenPromise(promise, updateState));
+    const publicPromises: Array<PublicPromise<T>> = promises.map(promise => new PublicPromise(promise, updateState));
+
+    updateState();
   });
 }
